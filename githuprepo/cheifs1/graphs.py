@@ -1,29 +1,41 @@
 import plotly.graph_objects as go
 
 def create_value_graph(home_value, mortgage_balance, equity_loan_balance):
-    """Create a stacked bar chart showing home value breakdown."""
+    """Create a pie chart showing home value breakdown."""
+    equity = home_value - mortgage_balance - equity_loan_balance
+    
+    # Calculate percentages for labels
+    total = home_value
+    equity_pct = (equity / total) * 100
+    mortgage_pct = (mortgage_balance / total) * 100
+    loan_pct = (equity_loan_balance / total) * 100
+    
     fig = go.Figure(data=[
-        go.Bar(name='Home Equity', 
-               y=['Home'], 
-               x=[home_value - mortgage_balance - equity_loan_balance], 
-               marker_color='#2ecc71'),
-        go.Bar(name='Mortgage Balance', 
-               y=['Home'], 
-               x=[mortgage_balance], 
-               marker_color='#e74c3c'),
-        go.Bar(name='Home Equity Loan', 
-               y=['Home'], 
-               x=[equity_loan_balance], 
-               marker_color='#f39c12')
+        go.Pie(
+            labels=['Home Equity', 'Mortgage Balance', 'Home Equity Loan'],
+            values=[equity, mortgage_balance, equity_loan_balance],
+            text=[f'{equity_pct:.1f}%', f'{mortgage_pct:.1f}%', f'{loan_pct:.1f}%'],
+            textinfo='label+text',
+            hole=0.3,
+            marker=dict(
+                colors=['#2ecc71', '#e74c3c', '#f39c12']
+            )
+        )
     ])
     
     fig.update_layout(
-        barmode='stack',
         title='Home Value Breakdown',
-        xaxis_title='Amount ($)',
-        height=200,
-        showlegend=True,
-        margin=dict(l=0, r=0, t=30, b=0)
+        height=300,
+        showlegend=False,
+        margin=dict(l=20, r=20, t=40, b=20),
+        annotations=[
+            dict(
+                text=f'${home_value:,.0f}',
+                x=0.5, y=0.5,
+                font=dict(size=14),
+                showarrow=False
+            )
+        ]
     )
     return fig
 

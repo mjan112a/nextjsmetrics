@@ -8,38 +8,52 @@ from utils import (
 from graphs import create_value_graph, create_equity_ratio_graph
 from pdf_generator import generate_pdf_report
 
-def render_sidebar():
-    """Render the sidebar input form."""
-    st.sidebar.header("PRELIMINARY CHEIFS REPORT FACT FINDER")
+def render_input_form():
+    """Render the input form using tabs for better organization."""
+    st.sidebar.markdown("""
+        <div style='text-align: center; margin-bottom: 20px;'>
+            <h1 style='color: #1f77b4;'>Panorama FA</h1>
+            <h3>PRELIMINARY CHEIFS REPORT FACT FINDER</h3>
+        </div>
+    """, unsafe_allow_html=True)
 
-    st.sidebar.subheader("PROPERTY INFORMATION:")
-    client_name = st.sidebar.text_input("CLIENT NAME(S)", "JIM AND MARY SMITH")
-    age = st.sidebar.text_input("AGE(S)", "65/60")
-    property_address = st.sidebar.text_input("PROPERTY ADDRESS", "123 MAIN STREET ANYTOWN, USA 45612")
-    property_type = st.sidebar.selectbox("PROPERTY TYPE (CIRCLE ONE)", 
-                                       ["SINGLE FAMILY RESIDENCE", "CONDOMINIUM", "PUD"])
+    # Create tabs for different input sections
+    client_tab, property_tab, financial_tab = st.sidebar.tabs([
+        "👥 Client", "🏠 Property", "💰 Financial"
+    ])
 
-    # Convert number inputs to sliders with appropriate ranges
-    approx_home_value = st.sidebar.slider("APPROX. HOME VALUE", 
-        min_value=100000, 
-        max_value=2000000, 
-        value=550000,
-        step=10000,
-        format="$%d")
+    with client_tab:
+        client_name = st.text_input("CLIENT NAME(S)", "JIM AND MARY SMITH")
+        age = st.text_input("AGE(S)", "65/60")
 
-    mortgage_balance = st.sidebar.slider("MORTGAGE BALANCE",
-        min_value=0,
-        max_value=int(approx_home_value * 0.95),  # Max 95% of home value
-        value=83000,
-        step=1000,
-        format="$%d")
+    with property_tab:
+        property_address = st.text_input("PROPERTY ADDRESS", "123 MAIN STREET ANYTOWN, USA 45612")
+        property_type = st.selectbox("PROPERTY TYPE", 
+                                   ["SINGLE FAMILY RESIDENCE", "CONDOMINIUM", "PUD"])
 
-    home_equity_loan_balance = st.sidebar.slider("HOME EQUITY LOAN BALANCE",
-        min_value=0,
-        max_value=int((approx_home_value - mortgage_balance) * 0.9),  # Max 90% of remaining equity
-        value=10000,
-        step=1000,
-        format="$%d")
+    with financial_tab:
+        st.markdown("### Property Value")
+        approx_home_value = st.slider("ESTIMATED HOME VALUE", 
+            min_value=100000, 
+            max_value=2000000, 
+            value=595000,
+            step=5000,
+            format="$%d")
+
+        st.markdown("### Current Loans")
+        mortgage_balance = st.slider("MORTGAGE BALANCE",
+            min_value=0,
+            max_value=int(approx_home_value * 0.95),
+            value=83000,
+            step=1000,
+            format="$%d")
+
+        home_equity_loan_balance = st.slider("HOME EQUITY LOAN BALANCE",
+            min_value=0,
+            max_value=int((approx_home_value - mortgage_balance) * 0.9),
+            value=10000,
+            step=1000,
+            format="$%d")
 
     return {
         'client_name': client_name,
@@ -52,35 +66,38 @@ def render_sidebar():
     }
 
 def render_visualizations(home_value, mortgage_balance, equity_loan_balance):
-    """Render the visualization graphs in the sidebar."""
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("VALUE VISUALIZATION")
-
-    # Display the value breakdown graph
-    value_fig = create_value_graph(home_value, mortgage_balance, equity_loan_balance)
-    st.sidebar.plotly_chart(value_fig, use_container_width=True)
-
-    # Display the equity ratio gauge
-    equity_fig = create_equity_ratio_graph(home_value, mortgage_balance + equity_loan_balance)
-    st.sidebar.plotly_chart(equity_fig, use_container_width=True)
+    """Render the visualization graphs."""
+    # Create two columns for the visualizations
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Display the value breakdown graph
+        value_fig = create_value_graph(home_value, mortgage_balance, equity_loan_balance)
+        st.plotly_chart(value_fig, use_container_width=True)
+    
+    with col2:
+        # Display the equity ratio gauge
+        equity_fig = create_equity_ratio_graph(home_value, mortgage_balance + equity_loan_balance)
+        st.plotly_chart(equity_fig, use_container_width=True)
 
 def render_funds_selection():
-    """Render the funds selection in the sidebar."""
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("DESIRED USE OF FUNDS:")
-    return st.sidebar.selectbox(" ", [
+    """Render the funds selection."""
+    st.subheader("DESIRED USE OF FUNDS:")
+    return st.selectbox(" ", [
         "I WANT MORE INCOME",
         "I WANT TO BUY LTC COVERAGE",
         "A COMBINATION OF BOTH"
     ], index=1)
 
 def render_main_report(equity_data, investment_data, funds_data):
-    """Render the main report section."""
+    """Render the main report section with improved visual layout."""
     # Create two columns for header and export button
     header_col, export_col = st.columns([0.85, 0.15])
 
     with header_col:
-        st.header("PRELIMINARY CHEIFS REPORT")
+        st.markdown("""
+            <h1 style='color: #1f77b4; margin-bottom: 0;'>PRELIMINARY CHEIFS REPORT</h1>
+        """, unsafe_allow_html=True)
     with export_col:
         if st.button("📄 Export PDF"):
             try:
@@ -100,30 +117,133 @@ def render_main_report(equity_data, investment_data, funds_data):
             except Exception as e:
                 st.error(f"Error generating PDF: {str(e)}")
 
-    st.subheader("*EQUITY ASSESSMENT")
-    st.write(f"ESTIMATED HOME VALUE: {equity_data['estimated_home_value']}")
-    st.write(f"SOURCE: {equity_data['source']}")
-    st.write(f"STATED DEBT: {equity_data['stated_debt']}")
-    st.write(f"ESTIMATED HOME EQUITY: {equity_data['estimated_home_equity']}")
+    # Equity Assessment Section
+    st.markdown("""
+        <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin: 10px 0;'>
+            <h3 style='color: #2c3e50; margin-top: 0;'>🏠 EQUITY ASSESSMENT</h3>
+            <table style='width: 100%;'>
+                <tr>
+                    <td style='padding: 8px 0;'>ESTIMATED HOME VALUE:</td>
+                    <td style='text-align: right;'><strong>${:,.2f}</strong></td>
+                </tr>
+                <tr>
+                    <td style='padding: 8px 0;'>SOURCE:</td>
+                    <td style='text-align: right;'><strong>{}</strong></td>
+                </tr>
+                <tr>
+                    <td style='padding: 8px 0;'>STATED DEBT:</td>
+                    <td style='text-align: right;'><strong>${:,.2f}</strong></td>
+                </tr>
+                <tr>
+                    <td style='padding: 8px 0;'>ESTIMATED HOME EQUITY:</td>
+                    <td style='text-align: right;'><strong>${:,.2f}</strong></td>
+                </tr>
+            </table>
+        </div>
+    """.format(
+        equity_data['estimated_home_value'],
+        equity_data['source'],
+        equity_data['stated_debt'],
+        equity_data['estimated_home_equity']
+    ), unsafe_allow_html=True)
 
-    st.subheader("*CHEIFS INVESTMENT")
-    st.write(f"MAX 50% CHEIFS EQUITY SHARE: {investment_data['max_50_cheifs_equity_share']}")
-    st.write(f"CURRENT HOME TO VALUE RATIO: {investment_data['current_home_to_value_ratio']:.4f}")
-    st.write(f"A LESS B (CHEIFS EQUITY SHARE): {investment_data['a_less_b']:.4f}")
-    st.write(f"CHEIFS INVESTMENT IN HOME: {investment_data['cheifs_investment_in_home']:.2f}")
-    st.write(f"PROCEEDS TO HOMEOWNER: {investment_data['proceeds_to_homeowner']:.2f}")
+    # CHEIFS Investment Section
+    st.markdown("""
+        <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin: 10px 0;'>
+            <h3 style='color: #2c3e50; margin-top: 0;'>💰 CHEIFS INVESTMENT</h3>
+            <table style='width: 100%;'>
+                <tr>
+                    <td style='padding: 8px 0;'>MAX 50% CHEIFS EQUITY SHARE:</td>
+                    <td style='text-align: right;'><strong>{:.1%}</strong></td>
+                </tr>
+                <tr>
+                    <td style='padding: 8px 0;'>DEBT TO HOME VALUE RATIO:</td>
+                    <td style='text-align: right;'><strong>{:.1%}</strong></td>
+                </tr>
+                <tr>
+                    <td style='padding: 8px 0;'>CHEIFS EQUITY SHARE:</td>
+                    <td style='text-align: right;'><strong>{:.1%}</strong></td>
+                </tr>
+                <tr>
+                    <td style='padding: 8px 0;'>CHEIFS INVESTMENT IN HOME:</td>
+                    <td style='text-align: right;'><strong>${:,.2f}</strong></td>
+                </tr>
+                <tr>
+                    <td style='padding: 8px 0;'>PROCEEDS TO HOMEOWNER:</td>
+                    <td style='text-align: right;'><strong>${:,.2f}</strong></td>
+                </tr>
+            </table>
+        </div>
+    """.format(
+        investment_data['max_50_cheifs_equity_share'],
+        investment_data['debt_to_home_value_ratio'],
+        investment_data['cheifs_equity_share'],
+        investment_data['cheifs_investment_in_home'],
+        investment_data['proceeds_to_homeowner']
+    ), unsafe_allow_html=True)
 
-    st.subheader("DESIRED USE OF FUNDS:")
-    st.write(f"PREMIUM AMOUNT: {funds_data['premium_amount']:.2f}")
-    st.write(f"APPROX COVERAGE AMOUNT: {funds_data['approx_coverage_amount']}")
-    st.write(f"LEVERAGE: {funds_data['leverage']:.2f}")
+    # Funds Usage Section
+    st.markdown("""
+        <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin: 10px 0;'>
+            <h3 style='color: #2c3e50; margin-top: 0;'>📊 DESIRED USE OF FUNDS</h3>
+            <table style='width: 100%;'>
+                <tr>
+                    <td style='padding: 8px 0;'>PREMIUM AMOUNT:</td>
+                    <td style='text-align: right;'><strong>${:,.2f}</strong></td>
+                </tr>
+                <tr>
+                    <td style='padding: 8px 0;'>APPROX COVERAGE AMOUNT:</td>
+                    <td style='text-align: right;'><strong>${:,.2f}</strong></td>
+                </tr>
+                <tr>
+                    <td style='padding: 8px 0;'>LEVERAGE:</td>
+                    <td style='text-align: right;'><strong>{:.2%}</strong></td>
+                </tr>
+            </table>
+        </div>
+    """.format(
+        funds_data['premium_amount'],
+        funds_data['approx_coverage_amount'],
+        funds_data['leverage']
+    ), unsafe_allow_html=True)
 
-    st.write("*ALL FIGURES ARE PRELIMINARY AND FOR INFORMATIONAL PURPOSES")
+    st.markdown("""
+        <div style='text-align: center; color: #666; font-style: italic; margin-top: 20px;'>
+            *ALL FIGURES ARE PRELIMINARY AND FOR INFORMATIONAL PURPOSES
+        </div>
+    """, unsafe_allow_html=True)
 
 def main():
     """Main application function."""
-    # Get user inputs
-    inputs = render_sidebar()
+    # Set page config for better mobile display
+    st.set_page_config(
+        page_title="CHEIFS Calculator",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+
+    # Add custom CSS for mobile responsiveness
+    st.markdown("""
+        <style>
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 2px;
+        }
+        .stTabs [data-baseweb="tab"] {
+            padding-right: 4px;
+            padding-left: 4px;
+        }
+        @media (max-width: 640px) {
+            .main .block-container {
+                padding-top: 1rem;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Get user inputs using the new tabbed interface
+    inputs = render_input_form()
     
     # Calculate values
     equity_data = calculate_equity_assessment(
@@ -134,23 +254,29 @@ def main():
     
     investment_data = calculate_cheifs_investment(
         equity_data['estimated_home_value'],
+        equity_data['stated_debt'],
         equity_data['estimated_home_equity']
     )
     
-    funds_data = calculate_funds_usage(investment_data['cheifs_investment_in_home'])
+    funds_data = calculate_funds_usage(investment_data['proceeds_to_homeowner'])
     
-    # Render visualizations
-    render_visualizations(
-        inputs['approx_home_value'],
-        inputs['mortgage_balance'],
-        inputs['home_equity_loan_balance']
-    )
+    # Create tabs for main content
+    overview_tab, details_tab = st.tabs(["Overview", "Detailed Report"])
     
-    # Get funds selection
-    use_of_funds = render_funds_selection()
+    with overview_tab:
+        # Render visualizations in the main content area
+        render_visualizations(
+            inputs['approx_home_value'],
+            inputs['mortgage_balance'],
+            inputs['home_equity_loan_balance']
+        )
+        
+        # Get funds selection
+        use_of_funds = render_funds_selection()
     
-    # Render main report
-    render_main_report(equity_data, investment_data, funds_data)
+    with details_tab:
+        # Render detailed report
+        render_main_report(equity_data, investment_data, funds_data)
 
 if __name__ == "__main__":
     main()
